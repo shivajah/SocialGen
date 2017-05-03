@@ -113,8 +113,8 @@ public class DataGenerator {
             for (long i = 0; i < numGBookUsers; i++) {
                 generateGBookUser(null);
                 appender.appendToFile(visitor.reset().visit(gBookUser).toString());
-                System.out.println("numofUsers: "+numGBookUsers);
-                System.out.println(visitor.reset().visit(gBookUser).toString());
+               // System.out.println("numofUsers: "+numGBookUsers);
+                //System.out.println(visitor.reset().visit(gBookUser).toString());
                 int numOfMsg = random.nextInt(2 * avgMsgPerGBookUser + 1);
                 generateGBookMessages(gBookUser, messageAppender, numOfMsg, visitor);
             }
@@ -180,7 +180,7 @@ public class DataGenerator {
                 adjustGBookUserSize(visitor);
              }
         }
-        System.out.println("userSize:"+ gBookUser.toString().length()+"user: "+gBookUser.toString());
+       // System.out.println("userSize:"+ gBookUser.toString().length()+"user: "+gBookUser.toString());
 
     }
 
