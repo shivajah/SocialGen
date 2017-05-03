@@ -18,6 +18,8 @@ import datatype.DateTime;
 import socialGen.ADMAppendVisitor;
 import socialGen.IAppendVisitor;
 
+import java.util.Arrays;
+
 public class GleambookUser {
 
     private long id;
@@ -59,6 +61,9 @@ public class GleambookUser {
 
     public long[] getFriendIds() {
         return friendIds;
+    }
+    public void removeLastFriendId(){
+        friendIds = Arrays.copyOf(friendIds, friendIds.length-1);
     }
 
     public Employments getEmployment() {

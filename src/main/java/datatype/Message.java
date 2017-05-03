@@ -19,7 +19,7 @@ import java.util.List;
 
 public class Message {
 
-    private char[] message = new char[500];
+    private char[] message = new char[10000];
     private List<String> referredTopics;
     private int length;
 

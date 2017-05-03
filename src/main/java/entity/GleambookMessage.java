@@ -48,6 +48,7 @@ public class GleambookMessage {
     public long getInResponseTo() {
         return inResponseTo;
     }
+    public DateTime getSendTime(){return sendTime;}
 
     public GleambookMessage() {
     }

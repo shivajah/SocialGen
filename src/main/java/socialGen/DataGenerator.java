@@ -15,7 +15,7 @@
 package socialGen;
 
 import java.io.IOException;
-import java.util.Random;
+import java.util.*;
 
 import utility.FileAppender;
 import utility.FileUtil;
@@ -92,6 +92,8 @@ public class DataGenerator {
     private static long gBookUserId;
     private static long gBookMsgId;
     private static long chirpMsgId;
+    private static int userSize = 1024;//bytes
+    private static int msgSize = 1024; //bytes
 
     private static String outputDir;
     private static PartitionConfiguration partition;
@@ -102,18 +104,89 @@ public class DataGenerator {
     private static ChirpMessage chirpMessage = new ChirpMessage();
 
     private static void generateGbookUsers(long numGBookUsers, IAppendVisitor visitor, String ext) throws IOException {
+        if(msgSize > 0 || userSize > 0){
+            generateGbookUsersWithFixedNumOfMsgs(numGBookUsers,visitor,ext);
+        }
+        else {
+            FileAppender appender = FileUtil.getFileAppender(outputDir + "/" + "gbook_usersT." + ext, true, true);
+            FileAppender messageAppender = FileUtil.getFileAppender(outputDir + "/" + "gbook_messagesT." + ext, true, true);
+            for (long i = 0; i < numGBookUsers; i++) {
+                generateGBookUser(null);
+                appender.appendToFile(visitor.reset().visit(gBookUser).toString());
+                System.out.println("numofUsers: "+numGBookUsers);
+                System.out.println(visitor.reset().visit(gBookUser).toString());
+                int numOfMsg = random.nextInt(2 * avgMsgPerGBookUser + 1);
+                generateGBookMessages(gBookUser, messageAppender, numOfMsg, visitor);
+            }
+            appender.close();
+            messageAppender.close();
+        }
+    }
+    private static void generateGbookUsersWithFixedNumOfMsgs(long numGBookUsers, IAppendVisitor visitor, String ext) throws IOException {
+
         FileAppender appender = FileUtil.getFileAppender(outputDir + "/" + "gbook_users." + ext, true, true);
         FileAppender messageAppender = FileUtil.getFileAppender(outputDir + "/" + "gbook_messages." + ext, true, true);
         for (long i = 0; i < numGBookUsers; i++) {
             generateGBookUser(null);
+            if(userSize > 0){
+                adjustGBookUserSize(visitor);
+            }
+          //  System.out.println(visitor.reset().visit(gBookUser).toString());
             appender.appendToFile(visitor.reset().visit(gBookUser).toString());
-            int numOfMsg = random.nextInt(2 * avgMsgPerGBookUser + 1);
-            generateGBookMessages(gBookUser, messageAppender, numOfMsg, visitor);
+            generateGBookMessages(gBookUser, messageAppender, avgMsgPerGBookUser, visitor);
         }
         appender.close();
         messageAppender.close();
     }
 
+    private static void adjustGBookUserSize(IAppendVisitor visitor) {
+        if (calculateDiffOfRecordSizeAndNeededSize(userSize) > 0) {
+            gBookUser.setName(gBookUser.getName().substring(0, gBookUser.getName().length() / 2));
+            if (calculateDiffOfRecordSizeAndNeededSize(userSize) > 0) {
+                gBookUser.setAlias(gBookUser.getAlias().substring(0, gBookUser.getAlias().length() / 2));
+            } else {
+                return;
+            }
+            while (calculateDiffOfRecordSizeAndNeededSize(userSize) > 0 && gBookUser.getEmployment().size() > 1) {
+                gBookUser.getEmployment().deleteLast();
+            }
+            if (calculateDiffOfRecordSizeAndNeededSize(userSize) <= 0) {
+                return;
+            }
+            while (calculateDiffOfRecordSizeAndNeededSize(userSize) > 0 && gBookUser.getFriendIds().length > 1) {
+                gBookUser.removeLastFriendId();
+            }
+            if (calculateDiffOfRecordSizeAndNeededSize(userSize) <= 0) {
+                return;
+            }
+            else {
+                System.out.println("Error: size of record cannot get reduced to the requested size.");
+            }
+        }
+        else if (calculateDiffOfRecordSizeAndNeededSize(userSize) < 0){
+            int i = 0;
+            while ((gBookUser.toString().getBytes().length - userSize) < 0) {
+                i++;
+                long val = ((long)(random.nextDouble()* (100 + 1)));
+                long[]old = gBookUser.getFriendIds();
+                long[] new1 = new long[old.length+i];
+                for(int j= 0;j<old.length;j++){
+                    new1[j] = old[j];
+                }
+                new1[new1.length-1] = val;
+                gBookUser.setFriendIds(new1);
+            }
+             if (calculateDiffOfRecordSizeAndNeededSize (userSize)>0){
+                adjustGBookUserSize(visitor);
+             }
+        }
+        System.out.println("userSize:"+ gBookUser.toString().length()+"user: "+gBookUser.toString());
+
+    }
+
+    private static int calculateDiffOfRecordSizeAndNeededSize(int size){
+         return (gBookUser.toString().length()-size);
+    }
     private static void generateChirpUsers(long numChirpUsers, IAppendVisitor visitor, String ext) throws IOException {
         FileAppender messageAppender = FileUtil.getFileAppender(outputDir + "/" + "chirp_messages." + ext, true, true);
         for (long i = 0; i < numChirpUsers; i++) {
@@ -133,10 +206,58 @@ public class DataGenerator {
             DateTime sendTime = randDateGen.getNextRandomDatetime();
             gBookMessage.reset(gBookMsgId++, user.getId(),
                     generateRandomLong(1, (numOfGBookUsers * avgMsgPerGBookUser)), location, sendTime, message);
+            if(msgSize > 0){
+                adjustGBookMessageSize(visitor);
+            }
             appender.appendToFile(visitor.reset().visit(gBookMessage).toString());
         }
     }
+private static void adjustGBookMessageSize(IAppendVisitor visitor){
+        if(sizeOfgbMsg() > msgSize){
+           int len =  gBookMessage.getMessage().getMessage().length;
+           int diff = sizeOfgbMsg() - msgSize;
+           char[] msg = gBookMessage.getMessage().getMessage();
+           if((len* Character.SIZE )-diff >= 0) {
+               char[] newmsg = Arrays.copyOf(msg, len - diff);
+               Message newMessage = new Message(newmsg,gBookMessage.getMessage().getReferredTopics());
+               gBookMessage.reset(gBookMessage.getMessageId(), gBookMessage.getAuthorID(),
+                       gBookMessage.getInResponseTo(), gBookMessage.getSenderLocation(), gBookMessage.getSendTime(), newMessage);
+           }
+           else
+           {
+               char[]newmsg = new char[0];
+               Message newMessage = new Message(newmsg,gBookMessage.getMessage().getReferredTopics());
+               gBookMessage.reset(gBookMessage.getMessageId(), gBookMessage.getAuthorID(),
+                       gBookMessage.getInResponseTo(), gBookMessage.getSenderLocation(), gBookMessage.getSendTime(), newMessage);
+           }
+        }
+        else if (sizeOfgbMsg() < msgSize){
+            int diff = msgSize - sizeOfgbMsg();
+            char[] oldMsg = gBookMessage.getMessage().getMessage();
+            String m="";
+            int i = 0;
+            for(int x=0;x<gBookMessage.getMessage().getLength();x++){
+                m=m+oldMsg[x];
+            }
+            m = m+'.';
+            diff--;
+            while(diff> 0){
+                if (i== gBookMessage.getMessage().getLength()-1){
+                    i=0;
+                }
+                m = m+oldMsg[i];
+                i++;diff--;
+            }
+            Message newMessage = new Message(m.toCharArray(),gBookMessage.getMessage().getReferredTopics());
+            gBookMessage.reset(gBookMessage.getMessageId(), gBookMessage.getAuthorID(),
+                    gBookMessage.getInResponseTo(), gBookMessage.getSenderLocation(), gBookMessage.getSendTime(), newMessage);
+            }
+        }
 
+private static int sizeOfgbMsg(){
+    return gBookMessage.toString().length();
+
+}
     private static void generateChirpMessages(ChirpUser user, FileAppender appender, long numMsg,
             IAppendVisitor visitor) throws IOException {
         Message message;

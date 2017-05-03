@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Dbgen>
-<gleambook.users.count>1000</gleambook.users.count>
-<chirp.users.count>1000</chirp.users.count>
-<avg.message.count.per.gleambook.user>5</avg.message.count.per.gleambook.user>
-<avg.message.count.per.chirp.user>10</avg.message.count.per.chirp.user>
+<gleambook.users.count>10485760</gleambook.users.count>
+<chirp.users.count>100</chirp.users.count>
+<avg.message.count.per.gleambook.user>8</avg.message.count.per.gleambook.user>
+<avg.message.count.per.chirp.user>80</avg.message.count.per.chirp.user>
 <seed>10</seed>
 
 <partitions>
@@ -11,13 +11,13 @@
 <partition>
 <id>1</id>
 <host>localhost</host>
-<path>/tmp/p1</path>
+<path>/Users/shiva/Documents/p1</path>
 </partition>
 
 <partition>
 <id>2</id>
 <host>localhost</host>
-<path>/tmp/p2</path>
+<path>/Users/shiva/Documents/p2</path>
 </partition>
 
 </partitions>

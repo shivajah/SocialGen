@@ -36,6 +36,8 @@ public class Employments {
         employment.add(emp);
     }
 
+    public void deleteLast(){ employment.remove(employment.size()-1); }
+
     public void set(Employments employments) {
         this.employment.clear();
         for (Employment e : employments.employment) {
